@@ -1,12 +1,8 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 ## Loading and preprocessing the data
-```{R}
+
+```r
 # Read data
 data<-read.csv(unz("activity.zip", "activity.csv"))
 # Format date column
@@ -15,8 +11,16 @@ data$date<-as.Date(data$date, format="%Y-%m-%d")
 str(data)
 ```
 
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
 ## What is mean total number of steps taken per day?
-```{R}
+
+```r
 library(plyr)
 # Compute total steps per day
 by_date<-ddply(data, .(date), summarize, total_steps=sum(steps))
@@ -24,14 +28,29 @@ by_date<-ddply(data, .(date), summarize, total_steps=sum(steps))
 hist(by_date$total_steps, breaks=10, xlab="Total steps per day")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+
 Mean and median total number of steps per day are, respectively:
-```{R}
+
+```r
 mean(by_date$total_steps, na.rm=TRUE)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(by_date$total_steps, na.rm=TRUE)
 ```
 
+```
+## [1] 10765
+```
+
 ## What is the average daily activity pattern?
-```{R}
+
+```r
 library(plyr)
 # Compute average steps per interval
 by_interval<-ddply(data, .(interval), summarize, average_steps=mean(steps,na.rm=TRUE))
@@ -41,10 +60,13 @@ max_<-by_interval[which.max(by_interval$average_steps),]
 plot(by_interval, type='l')
 abline(v=max_$interval, col="red", lty=3)
 ```
-The 5-minute interval at `r max_$interval`, on average across all days in the dataset, contains the maximum average-steps (`r max_$average_steps`)
+
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+The 5-minute interval at 835, on average across all days in the dataset, contains the maximum average-steps (206.1698113)
 
 ## Inputing missing values
-```{R}
+
+```r
 #Look up values to fill in (from interval averages from previous section)
 fill_values<-join(data[is.na(data$steps),], by_interval, by="interval")
 num_incompletes<-nrow(fill_values)
@@ -52,23 +74,39 @@ num_incompletes<-nrow(fill_values)
 data_filled<-data
 data_filled[is.na(data$steps),]$steps <- fill_values$average_steps
 ```
-There are `r num_incompletes` rows with missing values in the dataset. We can fill in these missing values by using interval averages calculated from the previous section
+There are 2304 rows with missing values in the dataset. We can fill in these missing values by using interval averages calculated from the previous section
 
-```{R}
+
+```r
 library(plyr)
 # Compute total steps per day
 by_date_filled<-ddply(data_filled, .(date), summarize, total_steps_filled=sum(steps))
 # Plot histogram of total steps per day
 hist(by_date_filled$total_steps_filled, breaks=10, xlab="Total steps per day (with filled data")
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
 Mean and median total number of steps per day (after filling in missing values) are, respectively:
-```{R}
+
+```r
 mean(by_date_filled$total_steps_filled, na.rm=TRUE)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(by_date_filled$total_steps_filled, na.rm=TRUE)
 ```
 
+```
+## [1] 10766.19
+```
+
 There is no change to the mean, but the median increased. We can plot histograms of the original and filled datasets as follows:
-```{R}
+
+```r
 library(ggplot2)
 library(reshape2)
 data_both<-join(by_date, by_date_filled, by="date")
@@ -76,10 +114,13 @@ data_both<-melt(data_both, id="date", variable.name="dataset")
 ggplot(data_both, aes(x=value, fill=dataset))+geom_histogram(binwidth=2000,position="dodge")+theme_bw()
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+
 Inputing missing data caused an increase to the peak count (ie. increase to the total daily number of steps)
 
 ## Are there differences in activity patterns between weekdays and weekends?
-```{R fig.height=7}
+
+```r
 # Create new factor column
 days_weekend=c("Saturday", "Sunday")
 data_filled$weekday=weekdays(data_filled$date)
@@ -96,5 +137,7 @@ ggplot(by_interval_daytype, aes(x=interval,y=average_steps)) +
     theme_bw() +
     theme(axis.text.x  = element_text(angle=90,vjust=0.5))
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png) 
 
 The 2 plots above show similar peaks around 8-9am timeframe, but with higher average steps for the rest of the day during the weekend
